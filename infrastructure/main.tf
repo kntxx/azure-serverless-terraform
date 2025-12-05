@@ -53,7 +53,52 @@ resource "azurerm_cosmosdb_account" "db" {
     failover_priority = 0
   }
 }
+resource "azurerm_cosmosdb_mongo_collection" "users" {
+  name                = "users"
+  resource_group_name = azurerm_cosmosdb_account.db.resource_group_name
+  account_name        = azurerm_cosmosdb_account.db.name
+  database_name       = azurerm_cosmosdb_mongo_database.db.name
 
+  default_ttl_seconds = -1
+  shard_key           = "email" 
+
+
+  index {
+    keys   = ["email"]
+    unique = true
+  }
+
+
+  index {
+    keys   = ["_id"]
+    unique = true
+  }
+}
+
+
+
+
+resource "azurerm_cosmosdb_mongo_database" "db" {
+  name                = "visitors-data" 
+  resource_group_name = azurerm_cosmosdb_account.db.resource_group_name
+  account_name        = azurerm_cosmosdb_account.db.name
+}
+
+resource "azurerm_cosmosdb_mongo_collection" "visitors" {
+  name                = "visitors"
+  resource_group_name = azurerm_cosmosdb_account.db.resource_group_name
+  account_name        = azurerm_cosmosdb_account.db.name
+  database_name       = azurerm_cosmosdb_mongo_database.db.name
+
+  default_ttl_seconds = -1
+  shard_key           = "id"
+
+  index {
+    keys   = ["_id"]
+    unique = true
+  }
+
+}
 resource "azurerm_service_plan" "plan" {
   name                = "kenta-func-plan"
   resource_group_name = azurerm_resource_group.rg.name
@@ -86,7 +131,7 @@ resource "azurerm_linux_function_app" "function_app" {
       allowed_origins = [
         "https://${azurerm_static_web_app.web.default_host_name}",
         "https://portal.azure.com",
-        "http://localhost:3000"
+        "http://localhost:5173"
         ]
     }
   }

@@ -1,10 +1,32 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/authContext";
+import { useEffect } from "react";
+import { useState } from "react";
 
 const Home = () => {
   const navigate = useNavigate();
   const { currentUser, userLoggedIn, doSignOut } = useAuth();
+
+  const [visitorCount, setVisitorCount] = useState("...");
+
+  useEffect(() => {
+    const fetchCount = async () => {
+      try {
+        const response = await fetch(
+          "https://kenta-serverless-app-xq4t.azurewebsites.net/api/visitorCounter"
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setVisitorCount(data.count);
+        }
+      } catch (error) {
+        console.error("Error fetching visitor count:", error);
+      }
+    };
+
+    fetchCount();
+  }, []);
 
   return (
     <section className="bigBgImage section h-screen flex items-center justify-center bg-Image p-5">
@@ -22,6 +44,15 @@ const Home = () => {
             </span>
             , you are now logged in.
           </h3>
+        </div>
+        {/* 🏆 VISITOR COUNTER UI 🏆 */}
+        <div className="mt-8 p-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
+          <p className="text-white text-xl">
+            Visitor Count:{" "}
+            <span className="font-bold textGradient text-2xl">
+              {visitorCount}
+            </span>
+          </p>
         </div>
 
         {/* BUTTONS */}
