@@ -15,7 +15,6 @@ export const useAuth = () => {
 // const API_URL = "http://localhost:5000/api/auth";
 const API_URL = "https://kenta-serverless-app-xq4t.azurewebsites.net/api";
 
-
 const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -29,7 +28,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-  
     const token = localStorage.getItem("token");
     const user = localStorage.getItem("user");
 
@@ -41,7 +39,6 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  
   const doCreateUserWithEmailAndPassword = async (name, email, password) => {
     try {
       const { data } = await api.post("/Register", { name, email, password });
@@ -57,8 +54,18 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-
   const doSignInWithEmailAndPassword = async (email, password) => {
+    // --- 1. NEW VALIDATION LOGIC HERE ---
+    if (!email || !password) {
+      // Stop right here. Don't bother the server.
+      throw new Error("Please enter both email and password.");
+    }
+
+    if (password.length < 6) {
+      throw new Error("Password must be at least 6 characters.");
+    }
+    // ------------------------------------
+
     try {
       const { data } = await api.post("/Login", { email, password });
 
@@ -69,11 +76,13 @@ export const AuthProvider = ({ children }) => {
 
       return data;
     } catch (error) {
-      throw new Error(error.response?.data?.message || "Login failed");
+      const errorMessage =
+        error.response?.data?.message || error.response?.data || "Login failed";
+
+      throw new Error(errorMessage);
     }
   };
 
- 
   const doSignOut = async () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
