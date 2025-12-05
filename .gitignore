@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Production Build
+build/
+dist/
+
+# Terraform (Heavy Plugins & Secrets)
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+
+# Environment Variables (Secrets)
+.env
+local.settings.json
+
+# IDE Settings
+.vscode/
+.idea/

@@ -1,0 +1,93 @@
+@import url("https://fonts.googleapis.com/css2?family=Unbounded:wght@200..900&display=swap");
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: "Unbounded";
+    font-weight: 300;
+  }
+}
+
+@layer utilities {
+  .regFont {
+    font-family: "Unbounded";
+    font-weight: 400;
+  }
+  .lightFont {
+    font-family: "Unbounded";
+    font-weight: 300;
+  }
+  .textGradient {
+    background-image: linear-gradient(
+      to right,
+      #c6f1f7 0%,
+      #f983e9 36%,
+      #b877ff 74%,
+      #c2e9cd 100%
+    );
+
+    -webkit-background-clip: text;
+    background-clip: text;
+
+    color: transparent;
+  }
+
+  .textBlack {
+    color: #111111;
+  }
+  .textGray {
+    color: #e4e4e4;
+  }
+  .bg-Image {
+    background-image: url("./assets/bgImage.png");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+  .bg-Image2 {
+    background-image: url("./assets/bgIamge2.png");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+  .bigBgImage {
+    background-image: url("./assets/bigBgImage.png");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+  @layer utilities {
+    .textGradient {
+      background-image: linear-gradient(
+        to right,
+        #c6f1f7 0%,
+        #f983e9 36%,
+        #b877ff 74%,
+        #c2e9cd 100%
+      );
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .btnGradient {
+      background-image: linear-gradient(
+        to right,
+        #c6f1f7 0%,
+        #f983e9 36%,
+        #b877ff 74%,
+        #c2e9cd 100%
+      );
+      color: white;
+      font-weight: 600;
+      padding: 0.75rem 1.5rem;
+      border-radius: 9999px;
+      transition: all 0.3s ease;
+    }
+
+    .btn-gradient:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+  }
+}
