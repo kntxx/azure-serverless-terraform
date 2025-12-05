@@ -4,12 +4,12 @@ let isConnected = false;
 
 module.exports = async function connectDB() {
   if (isConnected) {
-    return; // Use existing connection
+    return;
   }
 
   try {
     await mongoose.connect(process.env.COSMOS_CONNECTION_STR, {
-      dbName: "visitors-data", // Forces connection to your Terraform-created DB
+      dbName: "visitors-data", 
     });
     isConnected = true;
     console.log("MongoDB Connected via Mongoose");

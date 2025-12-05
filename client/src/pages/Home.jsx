@@ -45,7 +45,6 @@ const Home = () => {
             , you are now logged in.
           </h3>
         </div>
-        {/* 🏆 VISITOR COUNTER UI 🏆 */}
         <div className="mt-8 p-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
           <p className="text-white text-xl">
             Visitor Count:{" "}
