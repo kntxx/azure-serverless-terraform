@@ -83,7 +83,11 @@ resource "azurerm_linux_function_app" "function_app" {
       node_version = "18"
     }
     cors {
-      allowed_origins = ["*"]
+      allowed_origins = [
+        "https://${azurerm_static_web_app.web.default_host_name}",
+        "https://portal.azure.com",
+        "http://localhost:3000"
+        ]
     }
   }
 }
