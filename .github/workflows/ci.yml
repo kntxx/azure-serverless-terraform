@@ -57,7 +57,7 @@ jobs:
         cache-dependency-path: server-azure/package-lock.json
 
     - name: Install Dependencies
-      run: npm ci  # 'ci' is faster/cleaner than 'install' for pipelines
+      run: npm install  # 'ci' is faster/cleaner than 'install' for pipelines
 
     # Azure Functions don't strictly "build" like React, but we can check if packages install correctly
     - name: Verify Installation
