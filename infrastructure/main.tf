@@ -117,11 +117,19 @@ resource "azurerm_linux_function_app" "function_app" {
   service_plan_id            = azurerm_service_plan.plan.id
 
 
-  # --- FIX 1: Merge all settings into this ONE top-level block ---
-  app_settings = {
-    "AzureWebJobsStorage"      = azurerm_storage_account.storage.primary_connection_string
-    "COSMOS_CONNECTION_STR"    = azurerm_cosmosdb_account.db.primary_mongodb_connection_string
-    "WEBSITE_RUN_FROM_PACKAGE" = "1" # This prevents the deployment error we fought earlier
+ app_settings = {
+    # 1. The Database for the Functions Runtime (Logs, Triggers)
+    "AzureWebJobsStorage" = azurerm_storage_account.storage.primary_connection_string
+
+    # 2. Your Application Database
+    "COSMOS_CONNECTION_STR" = azurerm_cosmosdb_account.db.primary_mongodb_connection_string
+
+    # 3. The Deployment Fix
+    "WEBSITE_RUN_FROM_PACKAGE" = "1"
+
+    # 4. --- THE MISSING "HARD DRIVE" SETTINGS (Restore these!) ---
+    "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING" = azurerm_storage_account.storage.primary_connection_string
+    "WEBSITE_CONTENTSHARE"                     = "kenta-func-share-${random_string.random.result}" 
   }
 
 
