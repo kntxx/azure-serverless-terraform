@@ -22,9 +22,9 @@ resource "random_string" "random" {
 }
 
 resource "azurerm_static_web_app" "web" {
-  name = "kenta-frontend-app-${random_string.random.result}"
-  location            = azurerm_resource_group.rg.location  
-  resource_group_name = azurerm_resource_group.rg.name  
+  name                = "kenta-frontend-app-${random_string.random.result}"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
 }
 
 resource "azurerm_storage_account" "storage" {
@@ -60,7 +60,7 @@ resource "azurerm_cosmosdb_mongo_collection" "users" {
   database_name       = azurerm_cosmosdb_mongo_database.db.name
 
   default_ttl_seconds = -1
-  shard_key           = "email" 
+  shard_key           = "email"
 
 
   index {
@@ -79,7 +79,7 @@ resource "azurerm_cosmosdb_mongo_collection" "users" {
 
 
 resource "azurerm_cosmosdb_mongo_database" "db" {
-  name                = "visitors-data" 
+  name                = "visitors-data"
   resource_group_name = azurerm_cosmosdb_account.db.resource_group_name
   account_name        = azurerm_cosmosdb_account.db.name
 }
@@ -117,22 +117,25 @@ resource "azurerm_linux_function_app" "function_app" {
   service_plan_id            = azurerm_service_plan.plan.id
 
 
+  # --- FIX 1: Merge all settings into this ONE top-level block ---
   app_settings = {
-    "AzureWebJobsStorage"   = azurerm_storage_account.storage.primary_connection_string
-    "COSMOS_CONNECTION_STR" = azurerm_cosmosdb_account.db.primary_mongodb_connection_string
+    "AzureWebJobsStorage"      = azurerm_storage_account.storage.primary_connection_string
+    "COSMOS_CONNECTION_STR"    = azurerm_cosmosdb_account.db.primary_mongodb_connection_string
+    "WEBSITE_RUN_FROM_PACKAGE" = "1" # This prevents the deployment error we fought earlier
   }
 
 
   site_config {
     application_stack {
-      node_version = "18"
+      node_version = "20"
     }
+
     cors {
       allowed_origins = [
         "https://${azurerm_static_web_app.web.default_host_name}",
         "https://portal.azure.com",
         "http://localhost:5173"
-        ]
+      ]
     }
   }
 }
