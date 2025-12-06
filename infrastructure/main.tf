@@ -9,7 +9,7 @@ terraform {
 provider "azurerm" {
   features {}
 }
-
+data "azurerm_client_config" "current" {}
 resource "azurerm_resource_group" "rg" {
   name     = "kntxx-cloud-project-rg"
   location = "East Asia"
@@ -106,6 +106,48 @@ resource "azurerm_service_plan" "plan" {
   sku_name            = "Y1"
 }
 
+# 1. Create the Key Vault (CLEAN - No inline access policies)
+resource "azurerm_key_vault" "kv" {
+  name                        = "kenta-kv-${random_string.random.result}"
+  location                    = azurerm_resource_group.rg.location
+  resource_group_name         = azurerm_resource_group.rg.name
+  enabled_for_disk_encryption = true
+  tenant_id                   = data.azurerm_client_config.current.tenant_id
+  soft_delete_retention_days  = 7
+  purge_protection_enabled    = false
+
+  sku_name = "standard"
+}
+
+# 2. Access Policy for YOU (Moved to separate resource)
+# This fixes the conflict error.
+resource "azurerm_key_vault_access_policy" "client_policy" {
+  key_vault_id = azurerm_key_vault.kv.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = data.azurerm_client_config.current.object_id
+
+  secret_permissions = [
+    "Set",
+    "Get",
+    "List",
+    "Delete",
+    "Purge",
+    "Recover"
+  ]
+}
+
+
+
+# 3. Upload the Secret
+resource "azurerm_key_vault_secret" "cosmos_conn" {
+  name         = "cosmos-db-connection-string"
+  value        = azurerm_cosmosdb_account.db.primary_mongodb_connection_string
+  key_vault_id = azurerm_key_vault.kv.id
+  
+  # Explicitly wait for YOUR policy to be created, otherwise you can't write the secret
+  depends_on = [azurerm_key_vault_access_policy.client_policy] 
+}
+
 resource "azurerm_linux_function_app" "function_app" {
   name                = "kenta-serverless-app-${random_string.random.result}"
   resource_group_name = azurerm_resource_group.rg.name
@@ -114,11 +156,14 @@ resource "azurerm_linux_function_app" "function_app" {
   storage_account_name       = azurerm_storage_account.storage.name
   storage_account_access_key = azurerm_storage_account.storage.primary_access_key
   service_plan_id            = azurerm_service_plan.plan.id
-
+# --- NEW: Give the Function App a System Assigned Identity ---
+  identity {
+    type = "SystemAssigned"
+  }
 
   app_settings = {
     "AzureWebJobsStorage"   = azurerm_storage_account.storage.primary_connection_string
-    "COSMOS_CONNECTION_STR" = azurerm_cosmosdb_account.db.primary_mongodb_connection_string
+    "COSMOS_CONNECTION_STR" = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.cosmos_conn.id})"
   }
 
 
@@ -134,4 +179,15 @@ resource "azurerm_linux_function_app" "function_app" {
         ]
     }
   }
+}
+
+# 3. Give the Function App access to read secrets from Key Vault
+resource "azurerm_key_vault_access_policy" "func_policy" {
+  key_vault_id = azurerm_key_vault.kv.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = azurerm_linux_function_app.function_app.identity[0].principal_id
+
+  secret_permissions = [
+    "Get",
+  ]
 }
