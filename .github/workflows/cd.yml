@@ -1,4 +1,4 @@
-name: Full Stack Deployment (Frontend + Backend)
+name: Azure Static Web Apps CI/CD
 
 on:
   push:
@@ -10,64 +10,25 @@ on:
       - main
 
 jobs:
-  # ---------------------------------------------------
-  # JOB 1: DEPLOY FRONTEND (Azure Static Web App)
-  # ---------------------------------------------------
-  deploy_frontend:
+  build_and_deploy_job:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
-    name: Deploy Frontend (React)
+    name: Build and Deploy Job
     steps:
       - uses: actions/checkout@v3
         with:
           submodules: true
           lfs: false
 
-      - name: Build And Deploy SWA
+      - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }} 
           action: "upload"
-
-          # We explicitly tell SWA "Don't look for an API here"
-          # because we are deploying it separately below.
-          app_location: "/client"
-          api_location: ""
-          output_location: "dist"
-
-  # ---------------------------------------------------
-  # JOB 2: DEPLOY BACKEND (Azure Function App)
-  # ---------------------------------------------------
-  deploy_backend:
-    # Only run this on push to main (don't deploy backend on PRs usually)
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    name: Deploy Backend (Functions)
-    needs: deploy_frontend # Optional: Waits for frontend to finish
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: "20" # Matches your Terraform config
-
-      - name: Install Dependencies
-        run: npm ci
-        working-directory: ./server-azure
-
-      - name: Build Backend (If needed)
-        run: npm run build --if-present
-        working-directory: ./server-azure
-
-      - name: "Deploy to Azure Functions"
-        uses: Azure/functions-action@v1
-        id: fa
-        with:
-          # You need to add this secret to GitHub!
-          app-name: ${{ secrets.AZURE_FUNCTION_APP_NAME }}
-          package: "./server-azure"
-          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+        
+          app_location: "/client"     
+          api_location: ""           
+          output_location: "dist"     
+         
