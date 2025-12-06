@@ -22,9 +22,9 @@ resource "random_string" "random" {
 }
 
 resource "azurerm_static_web_app" "web" {
-  name = "kenta-frontend-app-${random_string.random.result}"
-  location            = azurerm_resource_group.rg.location  
-  resource_group_name = azurerm_resource_group.rg.name  
+  name                = "kenta-frontend-app-${random_string.random.result}"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
 }
 
 resource "azurerm_storage_account" "storage" {
@@ -60,7 +60,7 @@ resource "azurerm_cosmosdb_mongo_collection" "users" {
   database_name       = azurerm_cosmosdb_mongo_database.db.name
 
   default_ttl_seconds = -1
-  shard_key           = "email" 
+  shard_key           = "email"
 
 
   index {
@@ -78,7 +78,7 @@ resource "azurerm_cosmosdb_mongo_collection" "users" {
 
 
 resource "azurerm_cosmosdb_mongo_database" "db" {
-  name                = "visitors-data" 
+  name                = "visitors-data"
   resource_group_name = azurerm_resource_group.rg.name
   account_name        = azurerm_cosmosdb_account.db.name
 }
@@ -106,7 +106,7 @@ resource "azurerm_service_plan" "plan" {
   sku_name            = "Y1"
 }
 
-# 1. Create the Key Vault (CLEAN - No inline access policies)
+
 resource "azurerm_key_vault" "kv" {
   name                        = "kenta-kv-${random_string.random.result}"
   location                    = azurerm_resource_group.rg.location
@@ -119,8 +119,6 @@ resource "azurerm_key_vault" "kv" {
   sku_name = "standard"
 }
 
-# 2. Access Policy for YOU (Moved to separate resource)
-# This fixes the conflict error.
 resource "azurerm_key_vault_access_policy" "client_policy" {
   key_vault_id = azurerm_key_vault.kv.id
   tenant_id    = data.azurerm_client_config.current.tenant_id
@@ -137,18 +135,16 @@ resource "azurerm_key_vault_access_policy" "client_policy" {
 }
 
 
-
-# 3. Upload the Secret
 resource "azurerm_key_vault_secret" "cosmos_conn" {
   name         = "cosmos-db-connection-string"
   value        = azurerm_cosmosdb_account.db.primary_mongodb_connection_string
   key_vault_id = azurerm_key_vault.kv.id
-  
-  # Explicitly wait for YOUR policy to be created, otherwise you can't write the secret
-  depends_on = [azurerm_key_vault_access_policy.client_policy] 
+
+
+  depends_on = [azurerm_key_vault_access_policy.client_policy]
 }
 
-# 1. Log Analytics Workspace (The Database for Logs)
+
 resource "azurerm_log_analytics_workspace" "logs" {
   name                = "kenta-logs-${random_string.random.result}"
   location            = azurerm_resource_group.rg.location
@@ -157,7 +153,7 @@ resource "azurerm_log_analytics_workspace" "logs" {
   retention_in_days   = 30
 }
 
-# 2. Application Insights (The Monitoring Tool)
+
 resource "azurerm_application_insights" "appinsights" {
   name                = "kenta-appinsights-${random_string.random.result}"
   location            = azurerm_resource_group.rg.location
@@ -179,7 +175,7 @@ resource "azurerm_linux_function_app" "function_app" {
   storage_account_name       = azurerm_storage_account.storage.name
   storage_account_access_key = azurerm_storage_account.storage.primary_access_key
   service_plan_id            = azurerm_service_plan.plan.id
-# --- NEW: Give the Function App a System Assigned Identity ---
+
   identity {
     type = "SystemAssigned"
   }
@@ -188,7 +184,7 @@ resource "azurerm_linux_function_app" "function_app" {
     "AzureWebJobsStorage"   = azurerm_storage_account.storage.primary_connection_string
     "COSMOS_CONNECTION_STR" = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.cosmos_conn.id})"
 
-    # --- NEW: Connect to App Insights ---
+
     "APPINSIGHTS_INSTRUMENTATIONKEY"        = azurerm_application_insights.appinsights.instrumentation_key
     "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.appinsights.connection_string
   }
@@ -203,12 +199,12 @@ resource "azurerm_linux_function_app" "function_app" {
         "https://${azurerm_static_web_app.web.default_host_name}",
         "https://portal.azure.com",
         "http://localhost:5173"
-        ]
+      ]
     }
   }
 }
 
-# 3. Give the Function App access to read secrets from Key Vault
+
 resource "azurerm_key_vault_access_policy" "func_policy" {
   key_vault_id = azurerm_key_vault.kv.id
   tenant_id    = data.azurerm_client_config.current.tenant_id
