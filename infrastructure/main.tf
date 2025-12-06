@@ -148,6 +148,29 @@ resource "azurerm_key_vault_secret" "cosmos_conn" {
   depends_on = [azurerm_key_vault_access_policy.client_policy] 
 }
 
+# 1. Log Analytics Workspace (The Database for Logs)
+resource "azurerm_log_analytics_workspace" "logs" {
+  name                = "kenta-logs-${random_string.random.result}"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  sku                 = "PerGB2018"
+  retention_in_days   = 30
+}
+
+# 2. Application Insights (The Monitoring Tool)
+resource "azurerm_application_insights" "appinsights" {
+  name                = "kenta-appinsights-${random_string.random.result}"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  workspace_id        = azurerm_log_analytics_workspace.logs.id
+  application_type    = "Node.JS"
+}
+
+
+
+
+
+
 resource "azurerm_linux_function_app" "function_app" {
   name                = "kenta-serverless-app-${random_string.random.result}"
   resource_group_name = azurerm_resource_group.rg.name
@@ -164,6 +187,10 @@ resource "azurerm_linux_function_app" "function_app" {
   app_settings = {
     "AzureWebJobsStorage"   = azurerm_storage_account.storage.primary_connection_string
     "COSMOS_CONNECTION_STR" = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.cosmos_conn.id})"
+
+    # --- NEW: Connect to App Insights ---
+    "APPINSIGHTS_INSTRUMENTATIONKEY"        = azurerm_application_insights.appinsights.instrumentation_key
+    "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.appinsights.connection_string
   }
 
 
