@@ -125,7 +125,7 @@ resource "azurerm_linux_function_app" "function_app" {
     "COSMOS_CONNECTION_STR" = azurerm_cosmosdb_account.db.primary_mongodb_connection_string
 
     # 3. The Deployment Fix
-    "WEBSITE_RUN_FROM_PACKAGE" = "1"
+    "WEBSITE_RUN_FROM_PACKAGE" = "0"
 
     # 4. --- THE MISSING "HARD DRIVE" SETTINGS (Restore these!) ---
     "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING" = azurerm_storage_account.storage.primary_connection_string
